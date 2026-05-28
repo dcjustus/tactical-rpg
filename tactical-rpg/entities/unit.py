@@ -12,6 +12,7 @@ from systems.items import (
     SWORD, AXE, LANCE, BOW, MAGIC,
     WEAPON_RANGE, random_inventory,
 )
+import systems.sprites as _sprites
 
 
 def _vary(base, pct=0.15):
@@ -53,6 +54,10 @@ class Unit:
         self.alive        = True
         self.flash_timer  = 0.0    # hit flash countdown
 
+        # Idle animation state
+        self._idle_timer  = 0.0    # seconds within current frame
+        self._idle_frame  = 0      # 0, 1, or 2
+
         # Visual animation state — _draw_x/_draw_y trail behind x/y
         self._draw_x     = float(x)
         self._draw_y     = float(y)
@@ -65,20 +70,26 @@ class Unit:
         return math.hypot(self._draw_x - self.x, self._draw_y - self.y) > 0.5
 
     def update_anim(self, dt):
-        """Step the visual position toward the logical position."""
+        """Step the visual position toward the logical position and advance idle animation."""
         dx = self.x - self._draw_x
         dy = self.y - self._draw_y
         dist = math.hypot(dx, dy)
         if dist <= 0.5:
             self._draw_x = self.x
             self._draw_y = self.y
-            return
-        step = min(self._anim_speed * dt, dist)
-        self._draw_x += dx / dist * step
-        self._draw_y += dy / dist * step
-        if math.hypot(self.x - self._draw_x, self.y - self._draw_y) <= 0.5:
-            self._draw_x = self.x
-            self._draw_y = self.y
+        else:
+            step = min(self._anim_speed * dt, dist)
+            self._draw_x += dx / dist * step
+            self._draw_y += dy / dist * step
+            if math.hypot(self.x - self._draw_x, self.y - self._draw_y) <= 0.5:
+                self._draw_x = self.x
+                self._draw_y = self.y
+
+        # Advance idle frame cycle
+        self._idle_timer += dt
+        if self._idle_timer >= _sprites.FRAME_DURATION:
+            self._idle_timer -= _sprites.FRAME_DURATION
+            self._idle_frame = (self._idle_frame + 1) % 3
 
     def teleport_to(self, x, y):
         """Instantly reposition with no animation (used for undo)."""
@@ -118,8 +129,6 @@ class Unit:
 
     def draw(self, surface, selected=False, inspected=False):
         ix, iy = int(self._draw_x), int(self._draw_y)
-        base   = self._base_color()
-        dark   = self._dark_color()
         r      = UNIT_RADIUS
 
         if selected:
@@ -127,16 +136,16 @@ class Unit:
         elif inspected:
             pygame.draw.aacircle(surface, (255, 200, 80), (ix, iy), r + 5, 2)
 
-        self._draw_shape(surface, ix, iy, r, base, dark)
-        self._draw_hp_bar(surface, ix, iy, r)
+        sprite = _sprites.get_sprite(self.class_name, self.team, self.exhausted, self._idle_frame)
+        if sprite is not None:
+            sw, sh = sprite.get_size()
+            surface.blit(sprite, (ix - sw // 2, iy - sh // 2))
+        else:
+            base = self._base_color()
+            dark = self._dark_color()
+            self._draw_shape(surface, ix, iy, r, base, dark)
 
-        import core.constants as _C
-        badge_font = _C.FONT_UNIT_BADGE
-        if badge_font:
-            badge = self.weapon[0]
-            txt = badge_font.render(badge, False, WHITE)
-            txt.set_colorkey((0, 0, 0))
-            surface.blit(txt, txt.get_rect(center=(ix, iy)))
+        self._draw_hp_bar(surface, ix, iy, r)
 
         # Hit flash overlay
         if self.flash_timer > 0:

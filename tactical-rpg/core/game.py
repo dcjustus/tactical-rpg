@@ -202,7 +202,7 @@ class Game:
             if self.sub_state == S_ACTION and self.action_menu:
                 result = self.action_menu.handle_event(event)
                 self._process_action_choice(result)
-            if self.sub_state == S_ITEM_MENU and self.item_menu:
+            elif self.sub_state == S_ITEM_MENU and self.item_menu:
                 result = self.item_menu.handle_event(event)
                 self._process_item_choice(result)
             return
@@ -328,11 +328,12 @@ class Game:
 
     def _process_item_choice(self, result):
         unit = self.selected
-        if result == "back" or result is None:
-            if result == "back":
-                self.action_menu = self._build_action_menu(unit)
-                self.sub_state   = S_ACTION
-            self.item_menu = None
+        if result is None:
+            return  # unhandled key — keep item menu open
+        if result == "back":
+            self.item_menu   = None
+            self.action_menu = self._build_action_menu(unit)
+            self.sub_state   = S_ACTION
             return
         msg = result.use(unit)
         self.hud.push_log(msg)

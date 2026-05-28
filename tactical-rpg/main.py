@@ -8,6 +8,7 @@ import pygame
 from core.constants import SCREEN_W, SCREEN_H, FPS, TITLE, load_fonts
 from core.game import Game
 import systems.sound as sound
+import systems.sprites as sprites
 
 
 async def main():
@@ -17,6 +18,7 @@ async def main():
     clock  = pygame.time.Clock()
     load_fonts()
     sound.init()
+    sprites.init_sprites()
 
     game = Game(screen)
 
