@@ -1,6 +1,8 @@
 """
-Sound effect system. Loads MP3s from assets/sounds/ and plays them on game events.
-Falls back silently if files are missing or the mixer is unavailable (e.g. browser).
+Sound effect and music system.
+SFX use pygame.mixer.Sound (pre-loaded, low latency).
+Music uses pygame.mixer.music (streamed, one track at a time).
+Everything falls back silently if the mixer is unavailable (e.g. browser).
 """
 import os
 import pygame
@@ -24,7 +26,7 @@ _WEAPON_SOUND = {
 
 
 def init():
-    """Initialise the mixer and pre-load all sound files."""
+    """Initialise the mixer and pre-load all SFX files."""
     global _ready
     try:
         if not pygame.mixer.get_init():
@@ -36,15 +38,16 @@ def init():
 
 
 def _load_all():
-    entries = {
+    sfx_files = {
         'slash':    'slash.mp3',
         'strike':   'strike.mp3',
         'swing':    'swing.mp3',
         'magic':    'magic.mp3',
         'movement': 'movement.mp3',
         'arrow':    'arrow.mp3',
+        'death':    'death.mp3',
     }
-    for key, filename in entries.items():
+    for key, filename in sfx_files.items():
         path = os.path.join(_SOUNDS_DIR, filename)
         if os.path.isfile(path):
             try:
@@ -53,8 +56,10 @@ def _load_all():
                 pass  # placeholder or corrupt file — skip silently
 
 
+# ── SFX ──────────────────────────────────────────────────────────────────────
+
 def play(name: str):
-    """Play a sound by key name. No-ops if the sound is absent or mixer failed."""
+    """Play a sound effect by key name. No-ops if absent or mixer failed."""
     if not _ready:
         return
     snd = _sounds.get(name)
@@ -92,3 +97,33 @@ def stop_movement():
         except Exception:
             pass
         _movement_channel = None
+
+
+# ── Music ─────────────────────────────────────────────────────────────────────
+
+def play_music(name: str, loops: int = -1):
+    """
+    Load and play a music track from assets/sounds/.
+    loops=-1 loops indefinitely; loops=0 plays once.
+    Silently no-ops if the file is missing or unreadable.
+    """
+    if not _ready:
+        return
+    path = os.path.join(_SOUNDS_DIR, f'{name}.mp3')
+    if not os.path.isfile(path):
+        return
+    try:
+        pygame.mixer.music.load(path)
+        pygame.mixer.music.play(loops)
+    except Exception:
+        pass
+
+
+def stop_music():
+    """Stop any currently playing music track."""
+    if not _ready:
+        return
+    try:
+        pygame.mixer.music.stop()
+    except Exception:
+        pass

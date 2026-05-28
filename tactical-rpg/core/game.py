@@ -57,6 +57,8 @@ class Game:
         self._ai_pending_attack = None  # (enemy, target) waiting for move anim to complete
         self._ai_moving_unit    = None  # enemy currently animating (no pending attack)
         self._bg_color    = (22, 28, 18)
+        sound.stop_movement()
+        sound.play_music('menu_music')
 
     # ── Update ────────────────────────────────────────────────────────────────
 
@@ -111,6 +113,8 @@ class Game:
                     self.hud.push_log(line)
                 self.effects.extend(create_combat_effects(enemy, target))
             dead_allies = [a for a in self.allies if not a.alive]
+            if dead_allies or not enemy.alive:
+                sound.play('death')
             for a in dead_allies:
                 self._drop_items_from(a, killer=enemy)
             self.allies = [a for a in self.allies if a.alive]
@@ -148,6 +152,8 @@ class Game:
                         self.hud.push_log(line)
                     self.effects.extend(create_combat_effects(enemy, attack_target))
                 dead_allies = [a for a in self.allies if not a.alive]
+                if dead_allies or not enemy.alive:
+                    sound.play('death')
                 for a in dead_allies:
                     self._drop_items_from(a, killer=enemy)
                 self.allies = [a for a in self.allies if a.alive]
@@ -162,8 +168,12 @@ class Game:
         if self.state != "battle":
             return
         if not any(e.alive for e in self.enemies):
+            sound.stop_music()
+            sound.play_music('victory', loops=0)
             self.state = "victory"
         elif not any(a.alive for a in self.allies):
+            sound.stop_music()
+            sound.play_music('defeat', loops=0)
             self.state = "defeat"
 
     # ── Input ─────────────────────────────────────────────────────────────────
@@ -172,6 +182,7 @@ class Game:
         if self.state == "title":
             if event.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN):
                 self.state = "battle"
+                sound.play_music('battle_music')
             return
 
         if self.state in ("victory", "defeat"):
@@ -345,11 +356,13 @@ class Game:
                     for line in log:
                         self.hud.push_log(line)
                     dead_enemies = [e for e in self.enemies if not e.alive]
+                    dead_allies  = [a for a in self.allies  if not a.alive]
+                    if dead_enemies or dead_allies:
+                        sound.play('death')
                     for e in dead_enemies:
                         self._drop_items_from(e, killer=unit)
                     self.enemies = [e for e in self.enemies if e.alive]
                     # Drop items for any ally killed by counter-attack
-                    dead_allies = [a for a in self.allies if not a.alive]
                     for a in dead_allies:
                         self._drop_items_from(a, killer=enemy)
                     self.allies = [a for a in self.allies if a.alive]
@@ -390,6 +403,7 @@ class Game:
         self._ai_timer = 0.0
 
     def _begin_player_phase(self):
+        sound.stop_movement()   # safety: catches the last-enemy-still-moving bug
         self.phase    = "player"
         self.turn_num += 1
         for unit in self.allies + self.enemies:
