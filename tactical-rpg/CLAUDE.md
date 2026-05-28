@@ -132,6 +132,8 @@ fill background
 | `WEAPON_TRIANGLE_BONUS` | 3 | Damage ±bonus for triangle advantage |
 | `WEAPON_TRIANGLE_HIT_MOD` | 10 | Accuracy ±% for triangle advantage |
 | `DOUBLE_ATTACK_THRESHOLD` | 1.4 | attacker.SPD ≥ defender.SPD × this → double hit |
+| `BASE_CRIT_CHANCE` | 10 | Base crit % for all classes except Mage (Mage = 0) |
+| `CRIT_TRIANGLE_MOD` | 5 | Crit% ±modifier for weapon triangle advantage/disadvantage |
 | `UNIT_RADIUS` | 20 | Base sprite radius in pixels |
 
 ### Font system
@@ -274,8 +276,17 @@ dmg = max(1, attacker.intelligence - defender.resistance)
 ### Combat sequence
 
 1. Accuracy roll: `random(1–100) > hit_chance` → MISS, no damage.
-2. Defender **counter-attacks** if attacker is within defender's attack range.
-3. If `attacker.speed >= defender.speed * 1.4` → **follow-up strike** (checked after counter).
+2. **Critical hit roll**: on a hit, `random(1–100) <= crit_chance` → deal 2× damage. Logged as `[CRITICAL]`.
+3. Defender **counter-attacks** if attacker is within defender's attack range.
+4. If `attacker.speed >= defender.speed * 1.4` → **follow-up strike** (checked after counter).
+
+### Critical hit chance
+
+- **Mage**: 0% — magic damage is already high enough.
+- **All other classes**: 10% base (`BASE_CRIT_CHANCE`), modified by the weapon triangle:
+  - Advantage: +5% (`CRIT_TRIANGLE_MOD`)
+  - Disadvantage: −5%
+  - Bow and Magic are neutral (no triangle crit modifier).
 
 ---
 
@@ -583,7 +594,12 @@ No platform-specific code exists; the game runs identically locally and in the b
     pre-bakes ally/enemy/exhausted tinted variants. Units cycle the 3 frames at
     0.25 s each via `_idle_timer`/`_idle_frame` in `update_anim()`. Weapon letter
     badges removed. Primitive shapes remain as fallback.
-33. **Item-menu bug fixes**: (a) `if` → `elif` in `_handle_player_input` keyboard
+34. **Critical hit system**: on any successful hit, non-Mage units have a 10% base crit
+    chance that deals 2× damage. The weapon triangle applies a ±5% modifier (advantage
+    +5%, disadvantage −5%). Mages have 0% crit. Crits are logged as `[CRITICAL]`.
+    Constants `BASE_CRIT_CHANCE` and `CRIT_TRIANGLE_MOD` in `core/constants.py`;
+    `weapon_triangle_crit_mod()` in `systems/items.py`; applied in `systems/combat.py`.
+35. **Item-menu bug fixes**: (a) `if` → `elif` in `_handle_player_input` keyboard
     block — the same keypress was processed by both action menu and the freshly-opened
     item menu, silently consuming an item; (b) `_process_item_choice(None)` now
     returns early instead of destroying `item_menu`, preventing a soft-lock when any

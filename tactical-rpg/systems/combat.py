@@ -3,8 +3,8 @@ Combat resolution: accuracy roll, damage formula, double-attack, counter-attack.
 Physical weapons use STR vs DEF; Magic uses INT vs RES.
 """
 import random
-from systems.items import weapon_triangle_bonus, weapon_triangle_hit_mod, BOW, MAGIC, WEAPON_RANGE
-from core.constants import BASE_HIT_RATE, DOUBLE_ATTACK_THRESHOLD
+from systems.items import weapon_triangle_bonus, weapon_triangle_hit_mod, weapon_triangle_crit_mod, BOW, MAGIC, WEAPON_RANGE
+from core.constants import BASE_HIT_RATE, DOUBLE_ATTACK_THRESHOLD, BASE_CRIT_CHANCE, CRIT_TRIANGLE_MOD
 
 
 def hit_chance(attacker, defender):
@@ -63,6 +63,17 @@ def _strike(attacker, defender, verb):
             note += f" [+{tri_dmg} advantage]"
         elif tri_dmg < 0:
             note += f" [{tri_dmg} disadvantage]"
+
+    # Critical hit roll (Mages have 0% crit; all other classes use BASE_CRIT_CHANCE ± triangle mod)
+    if attacker.weapon == MAGIC:
+        crit_chance = 0
+    else:
+        crit_chance = max(0, BASE_CRIT_CHANCE + weapon_triangle_crit_mod(attacker.weapon, defender.weapon))
+
+    is_crit = crit_chance > 0 and random.randint(1, 100) <= crit_chance
+    if is_crit:
+        dmg *= 2
+        note += " [CRITICAL]"
 
     defender.take_damage(dmg)
     line = (f"{attacker.name} {verb} {defender.name} "

@@ -82,8 +82,16 @@ All stats have ±15% random variance on spawn, so no two units are identical. MO
 ### How a combat exchange works
 
 1. Attacker strikes.
-2. Defender **counter-attacks** if the attacker is within their own attack range.
-3. If the attacker's **Speed is ≥ 1.4× the defender's Speed**, they land a **follow-up strike**.
+2. On a hit, there is a chance for a **critical hit** that deals **2× damage** (logged as `[CRITICAL]`).
+3. Defender **counter-attacks** if the attacker is within their own attack range.
+4. If the attacker's **Speed is ≥ 1.4× the defender's Speed**, they land a **follow-up strike**.
+
+### Critical hits
+
+- **All classes except Mage** have a **10% base crit chance**.
+- **Mages** have **0% crit** — their magic damage is powerful enough on its own.
+- Having the **weapon triangle advantage** adds **+5%** to crit chance; disadvantage subtracts **5%**.
+- Bow and Magic are neutral to the triangle and receive no crit modifier.
 
 ### Damage formula
 

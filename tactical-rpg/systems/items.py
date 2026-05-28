@@ -36,6 +36,16 @@ def weapon_triangle_hit_mod(atk_weapon, def_weapon):
         return -10
     return 0
 
+def weapon_triangle_crit_mod(atk_weapon, def_weapon):
+    """Return +5, 0, or -5 crit% modifier based on triangle. Magic/Bow neutral."""
+    if atk_weapon in (BOW, MAGIC) or def_weapon in (BOW, MAGIC):
+        return 0
+    if TRIANGLE.get(atk_weapon) == def_weapon:
+        return 5
+    if TRIANGLE.get(def_weapon) == atk_weapon:
+        return -5
+    return 0
+
 # Attack range definitions: (min_px, max_px)
 WEAPON_RANGE = {
     SWORD: (0,  65),

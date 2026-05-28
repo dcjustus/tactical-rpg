@@ -48,6 +48,8 @@ WEAPON_TRIANGLE_BONUS   = 3    # ATK bonus for advantage / penalty for disadvant
 WEAPON_TRIANGLE_HIT_MOD = 10   # hit% modifier for advantage / disadvantage
 BASE_HIT_RATE           = 90   # base accuracy %
 DOUBLE_ATTACK_THRESHOLD = 1.4  # attacker.speed >= defender.speed * this → double hit
+BASE_CRIT_CHANCE        = 10   # base crit % (all classes except Mage; Mage = 0)
+CRIT_TRIANGLE_MOD       = 5    # crit% ±modifier for weapon triangle advantage/disadvantage
 
 # --- Enemy AI ---
 AI_STEP_DELAY = 0.45        # seconds between each enemy acting
