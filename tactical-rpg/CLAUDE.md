@@ -39,7 +39,18 @@ tactical-rpg/
 │   └── sound.py                 # sound effect loader + player (pygame.mixer)
 ├── assets/
 │   ├── sprites/                 # unit GIF sprites (unused; all graphics are primitives)
-│   └── sounds/                  # MP3 sound effects (slash/swing/strike/arrow/magic/movement)
+│   └── sounds/                  # MP3 audio files (replace placeholders with real files)
+│       ├── menu_music.mp3       # title screen background music (loops)
+│       ├── battle_music.mp3     # in-battle background music (loops)
+│       ├── victory.mp3          # victory screen jingle (plays once)
+│       ├── defeat.mp3           # defeat screen jingle (plays once)
+│       ├── slash.mp3            # sword attack SFX
+│       ├── swing.mp3            # axe attack SFX
+│       ├── strike.mp3           # lance attack SFX
+│       ├── arrow.mp3            # bow attack SFX
+│       ├── magic.mp3            # magic attack SFX
+│       ├── movement.mp3         # unit movement SFX (looped, stopped on arrival)
+│       └── death.mp3            # unit death SFX
 ├── battlefield/
 │   └── battlefield.py           # unit placement, terrain, TreasureChest
 └── ui/
