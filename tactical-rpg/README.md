@@ -184,6 +184,29 @@ Each class has a unique 3-frame idle animation that cycles continuously on the b
 
 ---
 
+## Levels & EXP
+
+Every unit has a level (shown in the right panel). Units start each battle at a random level between 1 and 10, with stats already grown to reflect that level.
+
+- **Hitting** an enemy awards **10 EXP**. Counter-attackers also earn EXP.
+- **Killing** an enemy awards a bonus **40 EXP** on top of the hit EXP.
+- **100 EXP** triggers a level up. Each stat has a class-specific growth rate (% chance of gaining +1 per level). A level-up message appears in the combat log listing which stats improved.
+- Level cap is **20**. EXP stops accumulating at max level.
+
+Each class grows differently:
+
+| Class | Grows best in... |
+|---|---|
+| Fighter | HP, balanced across all stats |
+| Warrior | HP and STR; poor magic stats |
+| Knight | DEF and RES; stays slow |
+| Archer | SPD; light armour |
+| Mage | INT; glass cannon stays fragile |
+
+No two units are ever identical — each one rolls an independent **±3 random modifier** on every stat when they spawn. Combined with level variance and growth-rate randomness, every battle features genuinely unique combatants.
+
+---
+
 ## Terrain
 
 Terrain pieces in the centre of the battlefield aren't just decoration — they affect combat and movement.

@@ -142,6 +142,12 @@ fill background
 | `ITEM_DROP_CHANCE` | 0.30 | Probability each dropped item goes directly to the killer |
 | `TERRAIN_DEFS` | dict | Per-kind `{evasion, move_cost, label}` for "tree" and "rock" |
 | `MAX_TERRAIN_EVASION` | 30 | Cap on stacked terrain evasion so units remain hittable |
+| `EXP_PER_LEVEL` | 100 | EXP required per level up |
+| `EXP_FOR_HIT` | 10 | EXP awarded per successful hit |
+| `EXP_FOR_KILL` | 40 | Bonus EXP on top of hit EXP when killing an enemy |
+| `SPAWN_LEVEL_MIN/MAX` | 1 / 10 | Level range units spawn at |
+| `LEVEL_CAP` | 20 | Maximum level; EXP stops accumulating |
+| `STAT_MODIFIER_RANGE` | 3 | Flat ±N random offset applied to each stat at spawn |
 
 ### Font system
 
@@ -185,7 +191,7 @@ black background is made transparent, giving a crisp pixel-sharp badge with no h
 | Speed | `speed` | ≥ enemy.speed × 1.4 → double hit |
 | Movement | `movement` | × MOV_SCALE = pixel movement radius |
 
-All stats except `movement` have ±15% random variance on spawn.
+All stats except `movement` have a flat ±`STAT_MODIFIER_RANGE` (±3) random offset applied independently on spawn. This replaces the old ±15% percentage variance with a tighter, more predictable spread.
 
 ### Base stats by class (before variance)
 
@@ -201,6 +207,31 @@ All stats except `movement` have ±15% random variance on spawn.
 - Knight STR raised 16→19 (disadvantaged matchups now deal ~6 dmg instead of 1); MOV raised 3→4.  
 - Fighter RES raised 5→10 so Mage deals ~10 dmg vs Fighters (4-hit kill) but still ~17 vs Warriors (3-hit kill).  
 - Knight DEF kept at 9 after playtesting showed DEF 18 made Knight vs Knight nearly impossible.
+
+### Level system
+
+Each unit has a `level` (1–20) and `exp` (0–99). Gaining `EXP_PER_LEVEL` (100) EXP triggers a level up.
+
+**EXP sources (awarded to the attacker in `_strike` inside `combat.py`):**
+- Successful hit: `EXP_FOR_HIT` (10 EXP)
+- Kill bonus (on top of hit EXP): `EXP_FOR_KILL` (40 EXP)
+- Counter-attackers also receive EXP because they are the "attacker" in `_strike`
+
+**Spawn level:** randomised between `SPAWN_LEVEL_MIN` (1) and `SPAWN_LEVEL_MAX` (10). On spawn, `_apply_level_ups(level - 1)` silently advances stats using growth rates so the unit arrives at its level with appropriate stats.
+
+**Level-up (during combat):** `unit.gain_exp(amount)` accumulates EXP; `_level_up()` is called for each threshold crossed and returns log strings (`"*** Name leveled up! (Lv.N) [+1 STR, +1 SPD] ***"`). Each stat rolls independently against its growth rate (% chance of +1). `max_hp` gains also increase current `hp` by the same amount.
+
+**Growth rates per class** (% chance of +1 per level):
+
+| Class | HP | STR | DEF | INT | RES | SPD |
+|---|---|---|---|---|---|---|
+| Fighter | 70 | 50 | 40 | 20 | 30 | 40 |
+| Warrior | 80 | 60 | 50 | 10 | 15 | 30 |
+| Knight  | 60 | 50 | 65 | 20 | 45 | 20 |
+| Archer  | 50 | 50 | 30 | 25 | 25 | 65 |
+| Mage    | 30 | 10 | 10 | 70 | 55 | 50 |
+
+Growth rates live in `CLASS_DEFS["<class>"]["growths"]` in `entities/unit_classes.py`. Movement never grows.
 
 ### Movement animation
 
@@ -644,7 +675,13 @@ No platform-specific code exists; the game runs identically locally and in the b
     pre-bakes ally/enemy/exhausted tinted variants. Units cycle the 3 frames at
     0.25 s each via `_idle_timer`/`_idle_frame` in `update_anim()`. Weapon letter
     badges removed. Primitive shapes remain as fallback.
-36. **Terrain gameplay system**: Trees (Forest) and rocks (Hills) now affect evasion
+37. **Level system and stat overhaul**: Units spawn at a random level (1–10) with stats
+    grown to match via growth rates. Each level up rolls each stat's growth% independently
+    for a +1 chance. EXP is awarded in `_strike` for hits (10 EXP) and kills (40 bonus).
+    Level-up messages appear inline in the combat log. Panel shows Lv.N + blue EXP bar.
+    Stat variance replaced: old ±15% percentage variance → new flat ±3 independent offset
+    per stat (`STAT_MODIFIER_RANGE`). Growth rates in `CLASS_DEFS["growths"]`.
+38. **Terrain gameplay system**: Trees (Forest) and rocks (Hills) now affect evasion
     and movement. Forest: −15% attacker hit / −50 px movement. Hills: −10% hit / −25 px.
     Movement cost is applied live — the unit stops short if the path crosses terrain.
     Mages are exempt from movement penalties. Terrain evasion is shown in the combat

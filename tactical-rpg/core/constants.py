@@ -62,6 +62,19 @@ AI_ATTACK_MARGIN    = 5      # px inside weapon range the AI targets when reposi
 # --- Loot ---
 ITEM_DROP_CHANCE = 0.30      # probability each dropped item goes directly to the killer
 
+# --- Level & EXP system ---
+EXP_PER_LEVEL    = 100   # EXP required for each level up
+EXP_FOR_HIT      = 10    # EXP awarded to attacker for each successful hit
+EXP_FOR_KILL     = 40    # bonus EXP awarded on top of EXP_FOR_HIT when a kill occurs
+SPAWN_LEVEL_MIN  = 1     # minimum unit level at the start of a battle
+SPAWN_LEVEL_MAX  = 10    # maximum unit level at the start of a battle
+LEVEL_CAP        = 20    # units stop gaining EXP / levels at this point
+
+# --- Stat modifier on spawn ---
+# Each stat gets an independent flat random offset in [-STAT_MODIFIER_RANGE, +STAT_MODIFIER_RANGE].
+# This replaces the old ±15% percentage variance with a tighter, flat spread.
+STAT_MODIFIER_RANGE = 3
+
 # --- Terrain gameplay ---
 # Trees count as Forest; rocks count as Hills.
 # evasion: % subtracted from attacker's hit chance when defender is in this terrain.

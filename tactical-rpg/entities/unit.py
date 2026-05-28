@@ -6,6 +6,8 @@ from core.constants import (
     EXHAUSTED_TINT, HP_HIGH, HP_MID, HP_LOW, WHITE, BLACK, DARK_GRAY,
     MOVE_CIRCLE_COLOR, ATTACK_RING_COLOR, DEAD_ZONE_COLOR, MOV_SCALE,
     UNIT_ANIM_SPEED, HIT_FLASH_DURATION,
+    EXP_PER_LEVEL, EXP_FOR_HIT, EXP_FOR_KILL,
+    SPAWN_LEVEL_MIN, SPAWN_LEVEL_MAX, LEVEL_CAP, STAT_MODIFIER_RANGE,
 )
 from entities.unit_classes import CLASS_DEFS
 from entities.names import get_name
@@ -15,12 +17,20 @@ from systems.items import (
 )
 import systems.sprites as _sprites
 
+# Maps internal stat attribute names to short display labels (used in level-up log).
+_STAT_LABEL = {
+    "max_hp":      "HP",
+    "strength":    "STR",
+    "defense":     "DEF",
+    "intelligence":"INT",
+    "resistance":  "RES",
+    "speed":       "SPD",
+}
 
-def _vary(base, pct=0.15):
-    """Apply ±pct random variance to a stat, returning an int (min 1)."""
-    lo = base * (1 - pct)
-    hi = base * (1 + pct)
-    return max(1, round(random.uniform(lo, hi)))
+
+def _mod(base, n=STAT_MODIFIER_RANGE):
+    """Apply a flat random offset in [-n, +n] to base, flooring at 1."""
+    return max(1, base + random.randint(-n, n))
 
 
 class Unit:
@@ -36,33 +46,85 @@ class Unit:
 
         defn = CLASS_DEFS[class_name]
         self.weapon       = defn["weapon"]
-        self.max_hp       = _vary(defn["max_hp"])
+
+        # Base stats with flat ±STAT_MODIFIER_RANGE variance (independent per stat).
+        self.max_hp       = _mod(defn["max_hp"])
         self.hp           = self.max_hp
+        self.strength     = _mod(defn["strength"])
+        self.defense      = _mod(defn["defense"])
+        self.intelligence = _mod(defn["intelligence"])
+        self.resistance   = _mod(defn["resistance"])
+        self.speed        = _mod(defn["speed"])
+        self.movement     = defn["movement"]          # no variance on MOV
+        self.mov_radius   = self.movement * MOV_SCALE
 
-        # Core stats (all vary ±15% except movement)
-        self.strength     = _vary(defn["strength"])
-        self.defense      = _vary(defn["defense"])
-        self.intelligence = _vary(defn["intelligence"])
-        self.resistance   = _vary(defn["resistance"])
-        self.speed        = _vary(defn["speed"])
-        self.movement     = defn["movement"]          # raw MOV stat, no variance
-        self.mov_radius   = self.movement * MOV_SCALE # pixel movement radius
+        # Level system — spawn at a random level and grow stats to match.
+        self.level = 1
+        self.exp   = 0
+        spawn_level = random.randint(SPAWN_LEVEL_MIN, SPAWN_LEVEL_MAX)
+        if spawn_level > 1:
+            self._apply_level_ups(spawn_level - 1)
 
-        self.inventory    = random_inventory()
-        self.name         = get_name(team)
-        self.exhausted    = False
-        self.moved        = False
-        self.alive        = True
-        self.flash_timer  = 0.0    # hit flash countdown
+        self.inventory = random_inventory()
+        self.name      = get_name(team)
+        self.exhausted = False
+        self.moved     = False
+        self.alive     = True
+        self.flash_timer = 0.0
 
         # Idle animation state
-        self._idle_timer  = 0.0    # seconds within current frame
-        self._idle_frame  = 0      # 0, 1, or 2
+        self._idle_timer = 0.0
+        self._idle_frame = 0
 
         # Visual animation state — _draw_x/_draw_y trail behind x/y
         self._draw_x     = float(x)
         self._draw_y     = float(y)
         self._anim_speed = UNIT_ANIM_SPEED
+
+    # ── Level system ─────────────────────────────────────────────────────────
+
+    def _apply_level_ups(self, n):
+        """Silently apply n level ups (called at spawn to reach starting level)."""
+        growths = CLASS_DEFS[self.class_name]["growths"]
+        for _ in range(n):
+            self.level += 1
+            for stat, pct in growths.items():
+                if random.randint(1, 100) <= pct:
+                    if stat == "max_hp":
+                        self.max_hp += 1
+                        self.hp     += 1
+                    else:
+                        setattr(self, stat, getattr(self, stat) + 1)
+
+    def _level_up(self):
+        """Apply one level up and return a list of log strings."""
+        self.level += 1
+        growths = CLASS_DEFS[self.class_name]["growths"]
+        gains = []
+        for stat, pct in growths.items():
+            if random.randint(1, 100) <= pct:
+                gains.append(stat)
+                if stat == "max_hp":
+                    self.max_hp += 1
+                    self.hp = min(self.hp + 1, self.max_hp)
+                else:
+                    setattr(self, stat, getattr(self, stat) + 1)
+        gain_str = ", ".join(f"+1 {_STAT_LABEL[s]}" for s in gains) if gains else "no gains"
+        return [f"  *** {self.name} leveled up! (Lv.{self.level}) [{gain_str}] ***"]
+
+    def gain_exp(self, amount):
+        """
+        Award EXP; trigger level ups as needed.
+        Returns a list of log strings for any level-up events.
+        """
+        if self.level >= LEVEL_CAP:
+            return []
+        self.exp += amount
+        messages = []
+        while self.exp >= EXP_PER_LEVEL and self.level < LEVEL_CAP:
+            self.exp -= EXP_PER_LEVEL
+            messages += self._level_up()
+        return messages
 
     # ── Animation ────────────────────────────────────────────────────────────
 
@@ -86,7 +148,6 @@ class Unit:
                 self._draw_x = self.x
                 self._draw_y = self.y
 
-        # Advance idle frame cycle
         self._idle_timer += dt
         if self._idle_timer >= _sprites.FRAME_DURATION:
             self._idle_timer -= _sprites.FRAME_DURATION
@@ -148,7 +209,6 @@ class Unit:
 
         self._draw_hp_bar(surface, ix, iy, r)
 
-        # Hit flash overlay
         if self.flash_timer > 0:
             fade = self.flash_timer / HIT_FLASH_DURATION
             size = r + 4

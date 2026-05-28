@@ -1,6 +1,5 @@
 """
 Side panel showing selected unit's full stat block and inventory.
-All measurements are described in plain language — no pixel values shown.
 """
 import pygame
 import core.constants as C
@@ -9,12 +8,16 @@ from core.constants import (
     UI_BG, UI_BORDER, UI_TEXT, UI_TEXT_DIM, UI_HIGHLIGHT,
     ALLY_COLOR, ENEMY_COLOR, WHITE,
     HP_HIGH, HP_MID, HP_LOW,
+    EXP_PER_LEVEL, LEVEL_CAP,
 )
 from systems.items import MAGIC, BOW
 
 PANEL_X = SCREEN_W - PANEL_W - 8
 PANEL_Y = 44
 MAX_ITEMS_SHOWN = 4
+
+# Colour for the EXP progress bar
+_EXP_BAR_COLOR = (80, 160, 255)
 
 
 def _range_label(weapon):
@@ -47,7 +50,19 @@ def draw_unit_panel(surface, unit):
     _blit(surface, C.FONT_MD, unit.name, name_col, x, y);  y += 20
 
     # Class · Weapon
-    _blit(surface, C.FONT_SM, f"{unit.class_name}  ·  {unit.weapon}", UI_TEXT_DIM, x, y); y += 14
+    _blit(surface, C.FONT_SM, f"{unit.class_name}  ·  {unit.weapon}", UI_TEXT_DIM, x, y); y += 13
+
+    # Level + EXP bar
+    if unit.level >= LEVEL_CAP:
+        _blit(surface, C.FONT_SM, f"Lv.{unit.level}  (MAX)", UI_TEXT_DIM, x, y); y += 13
+    else:
+        _blit(surface, C.FONT_SM, f"Lv.{unit.level}  EXP: {unit.exp}/{EXP_PER_LEVEL}", UI_TEXT_DIM, x, y); y += 12
+        pygame.draw.rect(surface, (50, 50, 50), (x, y, rw, 4))
+        exp_w = int(rw * unit.exp / EXP_PER_LEVEL)
+        if exp_w > 0:
+            pygame.draw.rect(surface, _EXP_BAR_COLOR, (x, y, exp_w, 4))
+        pygame.draw.rect(surface, WHITE, (x, y, rw, 4), 1)
+        y += 8
 
     # Attack range (plain language)
     _blit(surface, C.FONT_SM, _range_label(unit.weapon), UI_TEXT_DIM, x, y); y += 11

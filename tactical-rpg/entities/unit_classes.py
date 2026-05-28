@@ -2,11 +2,13 @@
 Unit class definitions.
 STR = physical attack  |  DEF = physical resistance
 INT = magic attack     |  RES = magic resistance
-SPD = speed (double hit if ≥ enemy SPD × 1.4)
-MOV = movement stat (× MOV_SCALE px per point)
+SPD = speed (double hit if >= enemy SPD x 1.4)
+MOV = movement stat (x MOV_SCALE px per point)
 
 Balance target: ~8-12 neutral damage per hit, ~3-4 hits to kill most units.
-Knights are the exception: durable against physical but vulnerable to magic.
+
+growths: per-stat percentage chance of +1 on each level up.
+  High growth = stat scales well; low growth = stat stays near base.
 """
 from systems.items import SWORD, AXE, LANCE, BOW, MAGIC
 
@@ -21,6 +23,14 @@ CLASS_DEFS = {
         "speed":       7,
         "movement":    5,
         "description": "Balanced warrior. Sword beats Axe.",
+        "growths": {
+            "max_hp":      70,   # solid HP pool
+            "strength":    50,
+            "defense":     40,
+            "intelligence":20,
+            "resistance":  30,
+            "speed":       40,
+        },
     },
     "Warrior": {
         "weapon":      AXE,
@@ -32,6 +42,14 @@ CLASS_DEFS = {
         "speed":       5,
         "movement":    4,
         "description": "Brawler. High HP/STR but very vulnerable to magic.",
+        "growths": {
+            "max_hp":      80,   # biggest HP pool; keeps growing
+            "strength":    60,   # consistently gets stronger
+            "defense":     50,
+            "intelligence":10,
+            "resistance":  15,   # stays low — Warriors fear mages
+            "speed":       30,
+        },
     },
     "Knight": {
         "weapon":      LANCE,
@@ -43,6 +61,14 @@ CLASS_DEFS = {
         "speed":       4,
         "movement":    4,     # raised: same as Warrior — slow but not glacial
         "description": "Armored. Decent DEF/RES but low HP and speed.",
+        "growths": {
+            "max_hp":      60,
+            "strength":    50,
+            "defense":     65,   # DEF is the Knight's identity
+            "intelligence":20,
+            "resistance":  45,   # above-average magic resist
+            "speed":       20,   # stays slow
+        },
     },
     "Archer": {
         "weapon":      BOW,
@@ -54,6 +80,14 @@ CLASS_DEFS = {
         "speed":       9,
         "movement":    5,
         "description": "Ranged. Cannot target enemies closer than 80 units.",
+        "growths": {
+            "max_hp":      50,
+            "strength":    50,
+            "defense":     30,   # stays lightly armored
+            "intelligence":25,
+            "resistance":  25,
+            "speed":       65,   # speed is the Archer's identity
+        },
     },
     "Mage": {
         "weapon":      MAGIC,
@@ -65,6 +99,14 @@ CLASS_DEFS = {
         "speed":       10,
         "movement":    5,
         "description": "Full-range attacker. Fragile but hits INT vs RES.",
+        "growths": {
+            "max_hp":      30,   # glass cannon — HP barely grows
+            "strength":    10,
+            "defense":     10,
+            "intelligence":70,   # INT is the Mage's identity
+            "resistance":  55,   # builds magic resilience over time
+            "speed":       50,   # stays fast
+        },
     },
 }
 

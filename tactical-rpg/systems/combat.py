@@ -5,7 +5,7 @@ Terrain evasion (Forest/Hills) reduces the attacker's effective hit chance.
 """
 import random
 from systems.items import weapon_triangle_bonus, weapon_triangle_hit_mod, weapon_triangle_crit_mod, MAGIC
-from core.constants import BASE_HIT_RATE, DOUBLE_ATTACK_THRESHOLD, BASE_CRIT_CHANCE
+from core.constants import BASE_HIT_RATE, DOUBLE_ATTACK_THRESHOLD, BASE_CRIT_CHANCE, EXP_FOR_HIT, EXP_FOR_KILL
 
 
 def hit_chance(attacker, defender, defender_terrain_ev=0):
@@ -86,6 +86,12 @@ def _strike(attacker, defender, verb, defender_terrain_ev=0):
     line = (f"{attacker.name} {verb} {defender.name} "
             f"for {dmg} dmg ({note}). "
             f"[{defender.name} HP: {defender.hp}/{defender.max_hp}]")
-    if not defender.alive:
+    killed = not defender.alive
+    if killed:
         line += f" — {defender.name} falls!"
-    return [line]
+
+    log = [line]
+    log += attacker.gain_exp(EXP_FOR_HIT)
+    if killed:
+        log += attacker.gain_exp(EXP_FOR_KILL)
+    return log
