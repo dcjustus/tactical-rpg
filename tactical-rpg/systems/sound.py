@@ -11,6 +11,7 @@ _SOUNDS_DIR = os.path.join(os.path.dirname(__file__), '..', 'assets', 'sounds')
 
 _sounds: dict = {}
 _ready = False
+_movement_channel = None   # tracks the looping movement sound so it can be stopped
 
 # Map weapon type → sound key
 _WEAPON_SOUND = {
@@ -67,3 +68,27 @@ def play(name: str):
 def play_for_weapon(weapon: str):
     """Play the combat sound appropriate for the given weapon type."""
     play(_WEAPON_SOUND.get(weapon, 'slash'))
+
+
+def play_movement():
+    """Start the movement sound looping. Call stop_movement() when the unit arrives."""
+    global _movement_channel
+    if not _ready:
+        return
+    snd = _sounds.get('movement')
+    if snd:
+        try:
+            _movement_channel = snd.play(loops=-1)
+        except Exception:
+            pass
+
+
+def stop_movement():
+    """Stop the looping movement sound."""
+    global _movement_channel
+    if _movement_channel is not None:
+        try:
+            _movement_channel.stop()
+        except Exception:
+            pass
+        _movement_channel = None

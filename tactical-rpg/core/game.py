@@ -55,6 +55,7 @@ class Game:
         self._ai_timer          = 0.0
         self._ai_delay          = 0.5   # seconds between enemies after animation+combat finish
         self._ai_pending_attack = None  # (enemy, target) waiting for move anim to complete
+        self._ai_moving_unit    = None  # enemy currently animating (no pending attack)
         self._bg_color    = (22, 28, 18)
 
     # ── Update ────────────────────────────────────────────────────────────────
@@ -78,6 +79,7 @@ class Game:
         if (self.state == "battle" and self.phase == "player"
                 and self.sub_state == S_MOVING and self.selected):
             if not self.selected.is_moving:
+                sound.stop_movement()
                 unit = self.selected
                 self._pickup_ground_items(unit)
                 self.action_menu = ActionMenu(unit, int(unit.x), int(unit.y),
@@ -90,11 +92,17 @@ class Game:
         self._check_win_loss()
 
     def _update_ai(self, dt):
+        # Stop movement sound when a non-attacking enemy finishes its animation
+        if self._ai_moving_unit is not None and not self._ai_moving_unit.is_moving:
+            sound.stop_movement()
+            self._ai_moving_unit = None
+
         # ── Phase 2: resolve combat once movement animation has finished ────────
         if self._ai_pending_attack is not None:
             enemy, target = self._ai_pending_attack
             if enemy.is_moving:
                 return  # still animating — wait
+            sound.stop_movement()
             self._ai_pending_attack = None
             # Resolve combat at the unit's arrived position
             if target.alive and enemy.can_attack(target):
@@ -130,6 +138,7 @@ class Game:
         if attack_target is not None:
             if enemy.is_moving:
                 # Unit animated toward target — defer combat until arrival
+                sound.play_movement()
                 self._ai_pending_attack = (enemy, attack_target)
             else:
                 # Already in range, no movement needed — attack right away
@@ -144,7 +153,10 @@ class Game:
                 self.allies = [a for a in self.allies if a.alive]
                 self._pickup_ground_items(enemy)
                 enemy.exhaust()
-        # else: ai_move already exhausted the enemy (heal branch or no targets)
+        elif enemy.is_moving:
+            # Enemy moved but couldn't reach a target — track for sound stop
+            sound.play_movement()
+            self._ai_moving_unit = enemy
 
     def _check_win_loss(self):
         if self.state != "battle":
@@ -250,7 +262,7 @@ class Game:
         nx, ny = clamp_to_radius(unit.x, unit.y, mx, my, unit.mov_radius)
         unit.x, unit.y = nx, ny
         unit.moved = True
-        sound.play('movement')
+        sound.play_movement()
 
         # Check for nearby chests at destination (ground pickup deferred to after anim)
         extra = []
@@ -307,7 +319,7 @@ class Game:
         unit = self.selected
         if result == "back" or result is None:
             if result == "back":
-                self.action_menu = ActionMenu(unit, int(unit.x), int(unit.y))
+                self.action_menu = self._build_action_menu(unit)
                 self.sub_state   = S_ACTION
             self.item_menu = None
             return
@@ -350,7 +362,16 @@ class Game:
 
         # Clicked empty space → cancel attack, reopen menu
         self.sub_state   = S_ACTION
-        self.action_menu = ActionMenu(unit, int(unit.x), int(unit.y))
+        self.action_menu = self._build_action_menu(unit)
+
+    def _build_action_menu(self, unit):
+        """Build an ActionMenu for unit, including Open Chest if one is in range."""
+        extra = []
+        for chest in self.chests:
+            if not chest.opened and chest.in_range(unit):
+                extra = ["Open Chest"]
+                break
+        return ActionMenu(unit, int(unit.x), int(unit.y), extra=extra)
 
     def _finish_turn(self):
         self.selected      = None
