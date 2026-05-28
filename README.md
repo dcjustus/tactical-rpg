@@ -17,7 +17,7 @@ python main.py
 
 ```bash
 pip install pygbag
-python -m pygbag --title "FE:Lite" --disable-sound-format-error --build .
+python -m pygbag --title "FE:Lite" --disable-sound-format-error .
 # then open http://localhost:8000 in Chrome or Firefox
 ```
 
