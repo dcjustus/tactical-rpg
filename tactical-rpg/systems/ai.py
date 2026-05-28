@@ -45,10 +45,14 @@ def ai_move(enemy, allies, terrain=None):
     if not enemy.can_attack(target):
         tx, ty = _best_position_for_attack(enemy, target)
 
-        # Apply live terrain movement cost (Mages exempt via path_terrain_cost)
+        # Apply live terrain movement cost (Mages exempt via path_terrain_cost).
+        # Check terrain only on the segment the enemy actually travels (clamped to
+        # mov_radius), not the full path to the distant target — terrain beyond the
+        # movement range should not penalise the current move.
         move_radius = enemy.mov_radius
         if terrain:
-            cost, _ = path_terrain_cost(enemy.x, enemy.y, tx, ty, terrain, enemy.weapon)
+            ix, iy = clamp_to_radius(enemy.x, enemy.y, tx, ty, enemy.mov_radius)
+            cost, _ = path_terrain_cost(enemy.x, enemy.y, ix, iy, terrain, enemy.weapon)
             move_radius = max(0, move_radius - cost)
 
         nx, ny = clamp_to_radius(enemy.x, enemy.y, tx, ty, move_radius)
