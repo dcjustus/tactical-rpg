@@ -3,8 +3,8 @@ Combat resolution: accuracy roll, damage formula, double-attack, counter-attack.
 Physical weapons use STR vs DEF; Magic uses INT vs RES.
 """
 import random
-from systems.items import weapon_triangle_bonus, weapon_triangle_hit_mod, weapon_triangle_crit_mod, BOW, MAGIC, WEAPON_RANGE
-from core.constants import BASE_HIT_RATE, DOUBLE_ATTACK_THRESHOLD, BASE_CRIT_CHANCE, CRIT_TRIANGLE_MOD
+from systems.items import weapon_triangle_bonus, weapon_triangle_hit_mod, weapon_triangle_crit_mod, MAGIC
+from core.constants import BASE_HIT_RATE, DOUBLE_ATTACK_THRESHOLD, BASE_CRIT_CHANCE
 
 
 def hit_chance(attacker, defender):
