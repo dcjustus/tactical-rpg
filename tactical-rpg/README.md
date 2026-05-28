@@ -160,15 +160,14 @@ Every unit spawns with 0–2 consumable items:
 
 ## Visual Guide
 
-| Shape | Class |
-|---|---|
-| Circle (medium) | Fighter (Sword) |
-| Circle (large) | Warrior (Axe) |
-| Rounded square | Knight (Lance) |
-| Small circle + arc | Archer (Bow) |
-| Diamond | Mage (Magic) |
+Each class has a unique 3-frame idle animation that cycles continuously on the battlefield.
 
-- **Blue** = your allies. **Red** = enemies. **Grey** = exhausted (already acted this turn).
+| Colour | Meaning |
+|---|---|
+| Blue sprites | Your allies |
+| Red-tinted sprites | Enemies |
+| Grey-tinted sprites | Exhausted unit (already acted this turn) |
+
 - The **blue ring** around a selected ally shows movement range.
 - The **red ring** shows attack range — visible whenever a unit is selected so you can plan before moving. For Archers, a dark inner ring marks the dead zone.
 - Clicking a **red enemy** on your turn shows their stats and attack range in view-only mode (gold ring, stats in the right panel). You cannot control them.

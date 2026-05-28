@@ -36,9 +36,10 @@ tactical-rpg/
 │   ├── movement.py              # radius clamping + point-in-circle helpers
 │   ├── ai.py                    # greedy enemy AI, returns (log, attacked_target)
 │   ├── effects.py               # visual-only combat animations
-│   └── sound.py                 # sound effect loader + player (pygame.mixer)
+│   ├── sound.py                 # sound effect loader + player (pygame.mixer)
+│   └── sprites.py               # PNG idle-sprite loader, tinting, 3-frame animation cache
 ├── assets/
-│   ├── sprites/                 # unit GIF sprites (unused; all graphics are primitives)
+│   ├── sprites/                 # 31×31 PNG idle frames — [class]_idle1/2/3.png (5 classes × 3 = 15 files)
 │   └── sounds/                  # MP3 audio files (replace placeholders with real files)
 │       ├── menu_music.mp3       # title screen background music (loops)
 │       ├── battle_music.mp3     # in-battle background music (loops)
@@ -214,18 +215,25 @@ to snap the unit back with no reverse animation.
 `unit.flash_timer` is set to 0.28 s on any `take_damage()` call. `draw()` overlays a  
 semi-transparent red circle while `flash_timer > 0`. The game's `update()` loop decays it each frame.
 
-### Unit shapes (drawn with pygame primitives)
+### Sprite rendering
 
-| Weapon | Shape |
+Units are drawn using 31×31 PNG idle frames loaded from `assets/sprites/`.  
+Each class has three frames (`[class]_idle1/2/3.png`) that cycle at **0.25 s per frame**  
+(full cycle ≈ 0.75 s) via `_idle_timer` / `_idle_frame` advanced in `update_anim()`.
+
+`systems/sprites.init_sprites()` is called once in `main.py` after `display.set_mode()`.  
+It scales each 31×31 frame to **64×64** and pre-bakes four tinted variants per frame:
+
+| Key | Appearance |
 |---|---|
-| Sword | Medium antialiased circle |
-| Axe | Large antialiased circle |
-| Lance | Rounded rectangle |
-| Bow | Small circle + arc |
-| Magic | Diamond (polygon) |
+| `ally` | Original PNG colours (blue palette) |
+| `enemy` | Greyscale + red-orange multiply |
+| `ally_ex` | Greyscale + muted blue-grey multiply |
+| `enemy_ex` | Greyscale + muted red-grey multiply |
 
-Ally units are blue-tinted; enemies red-tinted. Exhausted units darken to grey.  
-All circles use `pygame.draw.aacircle` (antialiased, pygame-ce 2.4+).
+`unit.draw()` calls `get_sprite(class_name, team, exhausted, frame_index)` and blits the  
+result centred on the unit's draw position. If sprites fail to load the old primitive  
+shapes (circles, rectangles, diamond) are used as a fallback.
 
 ---
 
@@ -508,8 +516,7 @@ No platform-specific code exists; the game runs identically locally and in the b
 
 ## Known Limitations / Future Work
 
-- No external sprite assets; all graphics are pygame primitives. Replacing `_draw_shape()`  
-  in `unit.py` with sprite blits would be the natural first upgrade.
+- Sprite assets are static idle frames only — no walk or attack animation on the map yet.
 - Terrain is purely decorative — no collision, line-of-sight, or terrain bonuses.
 - Enemy AI is fully greedy with no look-ahead. A priority-scoring system or simple A\*  
   for pathfinding would improve it.
@@ -571,3 +578,13 @@ No platform-specific code exists; the game runs identically locally and in the b
     music transitions on state changes (title↔battle, battle→victory/defeat).
     Bug fix included: `_begin_player_phase()` always calls `stop_movement()` so the
     final enemy's movement sound cannot loop past the end of the enemy phase.
+32. **PNG sprite system**: replaced GIF sprite sheets with 31×31 PNG idle frames
+    (`[class]_idle1/2/3.png`). `systems/sprites.py` loads, scales to 64×64, and
+    pre-bakes ally/enemy/exhausted tinted variants. Units cycle the 3 frames at
+    0.25 s each via `_idle_timer`/`_idle_frame` in `update_anim()`. Weapon letter
+    badges removed. Primitive shapes remain as fallback.
+33. **Item-menu bug fixes**: (a) `if` → `elif` in `_handle_player_input` keyboard
+    block — the same keypress was processed by both action menu and the freshly-opened
+    item menu, silently consuming an item; (b) `_process_item_choice(None)` now
+    returns early instead of destroying `item_menu`, preventing a soft-lock when any
+    unhandled key was pressed while the item menu was open.
