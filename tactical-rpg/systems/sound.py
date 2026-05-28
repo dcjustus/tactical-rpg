@@ -17,7 +17,7 @@ _WEAPON_SOUND = {
     SWORD: 'slash',
     AXE:   'swing',
     LANCE: 'strike',
-    BOW:   'slash',   # bow uses the slash whoosh as a fallback
+    BOW:   'arrow',
     MAGIC: 'magic',
 }
 
@@ -41,6 +41,7 @@ def _load_all():
         'swing':    'swing.mp3',
         'magic':    'magic.mp3',
         'movement': 'movement.mp3',
+        'arrow':    'arrow.mp3',
     }
     for key, filename in entries.items():
         path = os.path.join(_SOUNDS_DIR, filename)

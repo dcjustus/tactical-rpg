@@ -35,7 +35,11 @@ tactical-rpg/
 │   ├── combat.py                # damage formula, accuracy, double-attack
 │   ├── movement.py              # radius clamping + point-in-circle helpers
 │   ├── ai.py                    # greedy enemy AI, returns (log, attacked_target)
-│   └── effects.py               # visual-only combat animations
+│   ├── effects.py               # visual-only combat animations
+│   └── sound.py                 # sound effect loader + player (pygame.mixer)
+├── assets/
+│   ├── sprites/                 # unit GIF sprites (unused; all graphics are primitives)
+│   └── sounds/                  # MP3 sound effects (slash/swing/strike/arrow/magic/movement)
 ├── battlefield/
 │   └── battlefield.py           # unit placement, terrain, TreasureChest
 └── ui/
@@ -343,6 +347,40 @@ Effects tick in `game.update()` and are discarded when `effect.done == True`.
 
 ---
 
+## Sound Effects (`systems/sound.py`)
+
+Sound is handled by a single module that wraps `pygame.mixer`. It is initialised once in `main.py` (after `pygame.init()`) and then called from two sites:
+
+- **`systems/effects.py` → `create_combat_effects()`** — plays the weapon sound at the moment effects are spawned (i.e. when combat resolves and visuals begin).
+- **`core/game.py` → `_try_move()`** — plays `movement` when the player commits a move.
+
+### API
+
+```python
+sound.init()                  # call once at startup; safe to call if mixer unavailable
+sound.play('slash')           # play by key name; no-ops if key absent or mixer failed
+sound.play_for_weapon(weapon) # convenience wrapper used by effects.py
+```
+
+### Weapon → sound key mapping
+
+| Weapon | Sound key | File |
+|---|---|---|
+| Sword | `slash` | `assets/sounds/slash.mp3` |
+| Axe | `swing` | `assets/sounds/swing.mp3` |
+| Lance | `strike` | `assets/sounds/strike.mp3` |
+| Bow | `arrow` | `assets/sounds/arrow.mp3` |
+| Magic | `magic` | `assets/sounds/magic.mp3` |
+| Movement | `movement` | `assets/sounds/movement.mp3` |
+
+### Graceful degradation
+
+`init()` wraps `pygame.mixer.init()` in a try/except. If the mixer fails (e.g. no audio device, browser sandbox), `_ready` stays `False` and every subsequent `play()` call is a no-op. Sound files that are missing or unreadable (including the placeholder text files shipped in the repo) are skipped silently at load time; the remaining sounds still work.
+
+To add real sounds: replace the placeholder files in `assets/sounds/` with valid MP3s of the same name. No code changes required.
+
+---
+
 ## Battlefield Generation (`battlefield/battlefield.py`)
 
 - **Allies** spawn in the left third of the screen; **enemies** in the right third.
@@ -445,6 +483,8 @@ No platform-specific code exists; the game runs identically locally and in the b
 - The weapon triangle hit modifier and damage bonus are separate constants  
   (`WEAPON_TRIANGLE_HIT_MOD`, `WEAPON_TRIANGLE_BONUS`) in `core/constants.py`  
   and can be tuned independently without touching game logic.
+- Sound placeholder files in `assets/sounds/` are plain text; `pygame.mixer.Sound`  
+  will fail to load them and the system silently skips them. Replace with real MP3s.
 
 ---
 
@@ -488,3 +528,7 @@ No platform-specific code exists; the game runs identically locally and in the b
     movement animation finishes via `_ai_pending_attack` in game.py.
 30. **Bug fix**: allies killed by counter-attack during player turn now correctly  
     drop items immediately (previously items were lost until the enemy phase ran).
+31. **Sound effect system**: `systems/sound.py` wraps `pygame.mixer`; six MP3 slots  
+    (slash, swing, strike, arrow, magic, movement) loaded at startup. Combat sounds  
+    fire from `create_combat_effects()`; movement sound fires from `_try_move()`.  
+    Fully graceful — missing files and mixer failures are silenced.
