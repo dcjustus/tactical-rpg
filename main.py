@@ -1,7 +1,8 @@
 """
 Entry point. Pygbag-compatible: uses asyncio + await asyncio.sleep(0) each frame.
 Run locally:  python main.py
-Build web:    python -m pygbag --build .
+Build web:    python -m pygbag --title "FE:Lite" --build .
+              (run this from inside the project folder, then open http://localhost:8000)
 """
 import asyncio
 import pygame
