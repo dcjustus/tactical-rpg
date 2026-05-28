@@ -104,10 +104,11 @@ Magic ignores the weapon triangle entirely.
 ### Weapon triangle
 
 ```
-Sword  →  beats  →  Axe
- ↑                   ↓
-Lance  ←  beats  ←  (nothing beats lance except sword)
+        Sword
+       ↙     ↖
+    Axe   →   Lance
 ```
+Each arrow points from winner to loser.
 
 Having the **advantage** gives **+3 damage** and **+10% accuracy**.
 Having the **disadvantage** gives **−3 damage** and **−10% accuracy**.
