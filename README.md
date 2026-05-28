@@ -17,9 +17,11 @@ python main.py
 
 ```bash
 pip install pygbag
-python -m pygbag --title "FE:Lite" --build .
+python -m pygbag --title "FE:Lite" --disable-sound-format-error --build .
 # then open http://localhost:8000 in Chrome or Firefox
 ```
+
+> **Note:** Audio is disabled in the web build — the Pygbag bundler requires OGG format but the game ships MP3s. The game runs fully otherwise; the sound system degrades silently.
 
 ---
 
