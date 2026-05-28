@@ -176,4 +176,5 @@ def create_combat_effects(attacker, defender) -> list:
         effects.append(ImpactFlash(dx, dy, delay=0.0))
 
     sound.play_for_weapon(attacker.weapon)
+    sound.play_grunt()
     return effects

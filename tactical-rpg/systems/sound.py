@@ -5,6 +5,7 @@ Music uses pygame.mixer.music (streamed, one track at a time).
 Everything falls back silently if the mixer is unavailable (e.g. browser).
 """
 import os
+import random
 import pygame
 
 from systems.items import SWORD, AXE, LANCE, BOW, MAGIC
@@ -39,13 +40,16 @@ def init():
 
 def _load_all():
     sfx_files = {
-        'slash':    'slash.mp3',
-        'strike':   'strike.mp3',
-        'swing':    'swing.mp3',
-        'magic':    'magic.mp3',
-        'movement': 'movement.mp3',
-        'arrow':    'arrow.mp3',
-        'death':    'death.mp3',
+        'slash':     'slash.mp3',
+        'strike':    'strike.mp3',
+        'swing':     'swing.mp3',
+        'magic':     'magic.mp3',
+        'movement':  'movement.mp3',
+        'arrow':     'arrow.mp3',
+        'death':     'death.mp3',
+        'grunt_1':   'grunt 1.mp3',
+        'grunt_2':   'grunt 2.mp3',
+        'ui_button': 'ui button.mp3',
     }
     for key, filename in sfx_files.items():
         path = os.path.join(_SOUNDS_DIR, filename)
@@ -73,6 +77,11 @@ def play(name: str):
 def play_for_weapon(weapon: str):
     """Play the combat sound appropriate for the given weapon type."""
     play(_WEAPON_SOUND.get(weapon, 'slash'))
+
+
+def play_grunt():
+    """Play a random grunt SFX (grunt_1 or grunt_2) for the attacking unit."""
+    play(random.choice(['grunt_1', 'grunt_2']))
 
 
 def play_movement():

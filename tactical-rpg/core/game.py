@@ -181,12 +181,14 @@ class Game:
     def handle_event(self, event):
         if self.state == "title":
             if event.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN):
+                sound.play('ui_button')
                 self.state = "battle"
                 sound.play_music('battle_music')
             return
 
         if self.state in ("victory", "defeat"):
             if event.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN):
+                sound.play('ui_button')
                 self._reset()
                 self.state = "title"
             return
@@ -286,8 +288,9 @@ class Game:
         self.sub_state = S_MOVING
 
     def _process_action_choice(self, result):
-        if result is None:
+        if result is None or result == "close":
             return
+        sound.play('ui_button')
         unit = self.selected
 
         if result == "Attack":
@@ -323,13 +326,13 @@ class Game:
             self._finish_turn()
 
         elif result == "close":
-            # Clicked outside menu — keep menu open
-            pass
+            pass  # clicked outside menu — keep menu open (sound already guarded above)
 
     def _process_item_choice(self, result):
         unit = self.selected
         if result is None:
             return  # unhandled key — keep item menu open
+        sound.play('ui_button')
         if result == "back":
             self.item_menu   = None
             self.action_menu = self._build_action_menu(unit)

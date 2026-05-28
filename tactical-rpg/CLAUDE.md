@@ -386,6 +386,10 @@ Effects tick in `game.update()` and are discarded when `effect.done == True`.
 | Site | What it calls |
 |---|---|
 | `systems/effects.py` → `create_combat_effects()` | `sound.play_for_weapon(weapon)` — fires when combat resolves and visuals begin |
+| `systems/effects.py` → `create_combat_effects()` | `sound.play_grunt()` — randomly plays grunt_1 or grunt_2 alongside the weapon SFX (attacker only) |
+| `core/game.py` → `_process_action_choice()` | `sound.play('ui_button')` — plays on any committed menu selection (Attack, Item, Wait, etc.) |
+| `core/game.py` → `_process_item_choice()` | `sound.play('ui_button')` — plays when an item or Back is chosen in the item sub-menu |
+| `core/game.py` → `handle_event()` title/victory/defeat | `sound.play('ui_button')` — plays on any key/click to advance the screen |
 | `core/game.py` → `_try_move()` | `sound.play_movement()` — starts movement loop |
 | `core/game.py` → `update()` (S_MOVING → S_ACTION) | `sound.stop_movement()` — stops loop on arrival |
 | `core/game.py` → `_begin_player_phase()` | `sound.stop_movement()` — safety stop covering the last-enemy edge case |
@@ -401,6 +405,7 @@ Effects tick in `game.update()` and are discarded when `effect.done == True`.
 sound.init()                    # call once at startup; safe if mixer unavailable
 sound.play('death')             # play SFX by key; no-op if absent or mixer failed
 sound.play_for_weapon(weapon)   # maps weapon constant → SFX key, used by effects.py
+sound.play_grunt()              # play grunt_1 or grunt_2 at random (attacker hit reaction)
 sound.play_movement()           # starts movement SFX looping (loops=-1)
 sound.stop_movement()           # stops the movement loop channel
 sound.play_music('battle_music')        # load + play music track (loops=-1 default)
@@ -419,6 +424,9 @@ sound.stop_music()              # stop current music track
 | `magic` | `magic.mp3` | Magic attacks |
 | `movement` | `movement.mp3` | Unit movement (looped, stopped on arrival) |
 | `death` | `death.mp3` | Any unit killed in a combat exchange |
+| `grunt_1` | `grunt 1.mp3` | Attacker grunt on combat (randomly chosen with grunt_2) |
+| `grunt_2` | `grunt 2.mp3` | Attacker grunt on combat (randomly chosen with grunt_1) |
+| `ui_button` | `ui button.mp3` | Menu selection (action menu, item menu, screen transitions) |
 
 ### Music files (streamed via `pygame.mixer.music`)
 
@@ -594,7 +602,13 @@ No platform-specific code exists; the game runs identically locally and in the b
     pre-bakes ally/enemy/exhausted tinted variants. Units cycle the 3 frames at
     0.25 s each via `_idle_timer`/`_idle_frame` in `update_anim()`. Weapon letter
     badges removed. Primitive shapes remain as fallback.
-34. **Critical hit system**: on any successful hit, non-Mage units have a 10% base crit
+35. **Grunt and UI button SFX**: `play_grunt()` added to `systems/sound.py` — randomly
+    plays `grunt 1.mp3` or `grunt 2.mp3` alongside the weapon SFX in
+    `create_combat_effects()` (attacker only, defender is silent). `ui button.mp3` plays
+    via `sound.play('ui_button')` on every committed menu selection in
+    `_process_action_choice` / `_process_item_choice`, and on title/victory/defeat
+    screen transitions in `handle_event()`.
+36. **Critical hit system**: on any successful hit, non-Mage units have a 10% base crit
     chance that deals 2× damage. The weapon triangle applies a ±5% modifier (advantage
     +5%, disadvantage −5%). Mages have 0% crit. Crits are logged as `[CRITICAL]`.
     Constants `BASE_CRIT_CHANCE` and `CRIT_TRIANGLE_MOD` in `core/constants.py`;
